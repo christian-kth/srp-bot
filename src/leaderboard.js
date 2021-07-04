@@ -7,7 +7,7 @@ const { JSDOM } = pkg
 
 const CAR_NAME_MAPPING = {
     'ktyu_c8_lav_s1': 'C8 Laviolette Shuto Spec',
-    'nissan_skyline_r34_omori_factory_s1': 'Skyline GT-R R34 Nismo Omoro Factory S1',
+    'nissan_skyline_r34_omori_factory_s1': 'Skyline GT-R R34 Nismo Omori Factory S1',
     'srp_honda_s2000_legendary': 'S2000 (AP2 - Legendary)',
     'fgg_mitsubishi_evo_5_wangan': 'Lancer Evolution V Wangan Spec',
     'gmp_abflug_s900': 'ABflug S900 (JZA80)',
