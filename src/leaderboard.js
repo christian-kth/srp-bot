@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 import pkg from 'jsdom'
 import utils from './utils.js'
 
-const { JSDOM } = pkg
+const {JSDOM} = pkg
 
 const CAR_NAME_MAPPING = {
     'ktyu_c8_lav_s1': 'C8 Laviolette Shuto Spec',
@@ -18,7 +18,13 @@ const CAR_NAME_MAPPING = {
     'ks_toyota_supra_mkiv_tuned': 'Supra MKIV Time Attack',
     'arch_ruf_ctr_1987': 'CTR-1 Yellowbird',
     'ddm_nissan_skyline_hr31_house': 'Skyline HR31 House-Spec',
-    'srp_wangan_r33_ver1': 'Nissan Skyline GTR R33 (S3 - Wangan)',
+    'srp_wangan_r33_ver1': 'Nissan Skyline GTR R33 (S3 - Wangan)'
+}
+
+const MEDAL_MAPPING = {
+    0: ':first_place:',
+    1: ':second_place:',
+    2: ':third_place:'
 }
 
 export default async (strackerUrl, description, name) => {
@@ -42,13 +48,60 @@ export default async (strackerUrl, description, name) => {
         return unavailableMessage(description, strackerUrl)
     }
 
-    let fields = parseStrackerHtml(htmlString).map((leaderboardEntry, index) => ({
-        name: (index + 1) + '. ' + CAR_NAME_MAPPING[leaderboardEntry.vehicle] || leaderboardEntry.vehicle,
-        value: leaderboardEntry.time + ' by ' + leaderboardEntry.player
-    }))
+    const leaderboardData = parseStrackerHtml(htmlString).map(lbe => {
+        const adjustedStrackerUrl = utils.replaceQueryParam(
+            utils.replaceQueryParam(strackerUrl, 'cars', lbe.vehicle),
+            'ranking',
+            1
+        )
 
+        return {
+            request: () => fetch(adjustedStrackerUrl),
+            vehicle: lbe.vehicle,
+            time: lbe.time,
+            player: lbe.player
+        }
+    })
+
+    let fields = []
+
+    for (const lbd of leaderboardData) {
+        await setTimeout(() => '', 750)
+        const response = await lbd.request()
+        if (response.status !== 200) {
+            console.error(`Leaderboard entries for vehicle: ${lbd.vehicle} did not respond with status code OK`)
+            console.error(`response: `, response)
+            fields = [...fields, {
+                name: CAR_NAME_MAPPING[lbd.vehicle] || lbd.vehicle,
+                value: `${MEDAL_MAPPING[0]} \`${lbd.time}\` by ${lbd.player}`
+            }]
+            return
+        }
+
+        const htmlString = await response.text()
+        fields = [...fields, {
+            name: CAR_NAME_MAPPING[lbd.vehicle] || lbd.vehicle,
+            value: parseStrackerHtml(htmlString)
+                .slice(0, 3)
+                .map((lbe, index) => `${MEDAL_MAPPING[index]} \`${lbe.time}\` by ${lbe.player}`)
+                .join('\n')
+        }]
+    }
+
+    let finalFields = []
     if (fields.length < 1) {
-        fields = [{name: 'No times have been set so far!', value: 'Be the first one to set a time to be displayed here!'}]
+        finalFields = [{
+            name: 'No times have been set so far!',
+            value: 'Be the first one to set a time to be displayed here!'
+        }]
+    } else {
+        fields.forEach((field, index) => {
+            if (index + 1 < fields.length) {
+                finalFields.push({...field, value: `${field.value}\n\u200b`})
+            } else {
+                finalFields.push(field)
+            }
+        })
     }
 
     return new Discord.MessageEmbed()
@@ -58,8 +111,26 @@ export default async (strackerUrl, description, name) => {
         .setURL(strackerUrl)
         .setThumbnail('https://cdn.discordapp.com/attachments/671487944250490902/832189834700652604/newlogob.png')
         .setAuthor(name.startsWith('Leaderboard') ? name : 'Leaderboard: ' + name)
-        .addFields(fields)
+        .addFields(finalFields)
         .setTimestamp()
+}
+
+const parseStrackerHtml = (htmlString) => {
+    const dom = new JSDOM(htmlString)
+    return [...dom.window.document.querySelector('tbody').childNodes]
+        .filter(node => node.nodeName === 'TR')
+        .map(node => ({
+            vehicle: decodeHtml(node.children[2].innerHTML).trim(),
+            player: decodeHtml(node.children[1].innerHTML),
+            time: decodeHtml(node.children[3].innerHTML)
+        }))
+}
+
+const decodeHtml = (html) => {
+    const dom = new JSDOM('')
+    const txt = dom.window.document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
 }
 
 const unavailableMessage = (description, strackerUrl) => {
@@ -72,16 +143,4 @@ const unavailableMessage = (description, strackerUrl) => {
         .setURL(strackerUrl)
         .addField('Oh no', 'The leaderboard is currently unavailable. Try checking back again later')
         .setTimestamp()
-}
-
-// embrace pain
-const parseStrackerHtml = (htmlString) => {
-    const dom = new JSDOM(htmlString)
-    return [...dom.window.document.querySelector('tbody').childNodes]
-        .filter(node => node.nodeName === 'TR')
-        .map(node => ({
-            vehicle: node.children[2].innerHTML.trim(),
-            player: node.children[1].innerHTML,
-            time: node.children[3].innerHTML
-        }))
 }
