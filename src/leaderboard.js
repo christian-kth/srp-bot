@@ -59,7 +59,7 @@ export default async (strackerUrl, description, name) => {
             request: () => fetch(adjustedStrackerUrl),
             vehicle: lbe.vehicle,
             time: lbe.time,
-            player: lbe.player
+            player: utils.clean(lbe.player)
         }
     })
 
@@ -73,7 +73,7 @@ export default async (strackerUrl, description, name) => {
             console.error(`response: `, response)
             fields = [...fields, {
                 name: CAR_NAME_MAPPING[lbd.vehicle] || lbd.vehicle,
-                value: `${MEDAL_MAPPING[0]} \`${lbd.time}\` by ${lbd.player}`
+                value: `${MEDAL_MAPPING[0]} \`${lbd.time}\` by ${utils.clean(lbe.player)}`
             }]
             return
         }
@@ -83,7 +83,7 @@ export default async (strackerUrl, description, name) => {
             name: CAR_NAME_MAPPING[lbd.vehicle] || lbd.vehicle,
             value: parseStrackerHtml(htmlString)
                 .slice(0, 3)
-                .map((lbe, index) => `${MEDAL_MAPPING[index]} \`${lbe.time}\` by ${lbe.player}`)
+                .map((lbe, index) => `${MEDAL_MAPPING[index]} \`${lbe.time}\` by ${utils.clean(lbe.player)}`)
                 .join('\n')
         }]
     }

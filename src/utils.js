@@ -1,3 +1,5 @@
+import Filter from "bad-words";
+
 const allMessagesFromChannelList = async (client) => {
     const channels = global.channels.map(id => client.channels.cache.get(id))
 
@@ -21,7 +23,14 @@ const replaceQueryParam = (urlString, param, newValue = '') => {
     return (url.protocol + '//' + url.host + url.pathname) + (query.length > 2 ? query + '&' : '?') + (param + '=' + newValue)
 }
 
+const clean = (string) => {
+    const filter = new Filter()
+    filter.addWords(...global.bannedWords)
+    return filter.clean(string)
+}
+
 export default {
     allMessagesFromChannelList,
-    replaceQueryParam
+    replaceQueryParam,
+    clean
 }
