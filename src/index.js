@@ -10,6 +10,8 @@ global.leaderboardScheduleDelay = 300000 // every five minutes
 global.botId = String(process.env.BOT_ID)
 global.permittedRoles = String(process.env.ALLOWED_ROLES).split(',')
 global.channels = String(process.env.CHANNELS).split(',')
+global.bannedWords = String(process.env.BANNED_WORDS).split(',')
+
 
 const client = new Discord.Client()
 await client.login(process.env.DISCORD_SECRET)
