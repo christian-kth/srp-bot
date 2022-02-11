@@ -75,7 +75,7 @@ will change the status in channel with ID = 666760533411758135 from the example 
 
 ![image](https://i.imgur.com/NV2y4hh.png) 
 
-### Add game server status
+### Add game server leaderboard
 
 `srpb!leaderboardadd "<channelID>" "<name>" "<description> "<strackerUrl>"`
 
